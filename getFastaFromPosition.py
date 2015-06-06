@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''
 Created on May 8, 2015
 getFastaFromPosition
