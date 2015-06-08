@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''
 Created on June 6, 2015
 goHyperG.py
