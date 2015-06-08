@@ -20,7 +20,7 @@ getFastaFromPosition
 #from Bio import SeqIO
 
 from optparse import OptionParser
-import re
+import re, sys
 
 ##################################################
 # Do all the parsing of command line options here
@@ -35,7 +35,7 @@ def parseArguments():
     parser.add_option("-f", "--flank", dest="flank",
                       help="amount of flanking sequence")
     (options, args) = parser.parse_args()
-    return options
+    return options,parser
 
 ##################################################
 # load fasta sequence
@@ -96,7 +96,13 @@ def getSeqeunceFromPosition(allsequences, position, flank):
 ##################################################
 
 if __name__ == '__main__':
-    allarguments = parseArguments()
+    allarguments,parser = parseArguments()
+
+    # exit if no args provided
+    if allarguments.seqfile is None and allarguments.position is None and allarguments.flank is None:
+        parser.print_help()
+        sys.exit(1)
+
     allsequences = loadFastaSequence(str(allarguments.seqfile))
     getSeqeunceFromPosition(allsequences, str(allarguments.position), int(allarguments.flank))
     #print(allsequences)
