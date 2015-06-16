@@ -20,7 +20,7 @@ __author__ = 'manpreetkatari'
 from optparse import OptionParser
 from scipy.stats import hypergeom
 from statsmodels.sandbox.stats.multicomp import fdrcorrection0
-
+import sys
 
 ##################################################
 # Do all the parsing of command line options here
@@ -32,7 +32,7 @@ def parseArguments():
                       help="specify path to file with list of genes")
     parser.add_option("-a", "--associationfile", dest="associationfile", default="cassavaV61.go",
                       help="association file")
-    parser.add_option("-d", "--description", dest="descriptionfile", default="gonames.txt",
+    parser.add_option("-d", "--description", dest="descriptionfile", default="/export/apps/mkatari-ilri/go.names.txt",
                       help="file containing the description of the terms that are in association file")
     (options, args) = parser.parse_args()
     return options, parser
@@ -165,10 +165,10 @@ def doHyperG(genelist, allgenes, allterms, assocname):
 ##################################################
 
 if __name__ == '__main__':
-    allarguments = parseArguments()
+    allarguments,parser = parseArguments()
 
     # exit if no args provided
-    if allarguments.genelistfile is None and allarguments.associationfile is None and allarguments.descriptionfile is None:
+    if allarguments.genelistfile is None and allarguments.associationfile is None:
         parser.print_help()
         sys.exit(1)
 

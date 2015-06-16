@@ -83,7 +83,7 @@ def getGenesFromGFF(infile):
 ##################################################
 
 if __name__ == '__main__':
-    allarguments = parseArguments()
+    allarguments,parser = parseArguments()
 
     if allarguments.blastoutput is None and allarguments.gfffile is None and allarguments.numhits is None:
     parser.print_help()
