@@ -15,8 +15,8 @@ getFastaFromPosition
 - OUTPUT:
     - fasta file with sequence requested
 
-@author: mkatari
 '''
+
 #from Bio import SeqIO
 
 from optparse import OptionParser
@@ -32,6 +32,8 @@ def parseArguments():
                       help="specify path to fasta sequence file")
     parser.add_option("-p", "--positionfile", dest="position",
                       help="position file")
+    parser.add_option("-r", "--regionfile", dest="region",
+                      help="region file")
     parser.add_option("-f", "--flank", dest="flank",
                       help="amount of flanking sequence")
     (options, args) = parser.parse_args()
@@ -90,6 +92,35 @@ def getSeqeunceFromPosition(allsequences, position, flank):
                 print allsequences[k][start:end]
                 #print "\n"
 
+##################################################
+# Get fasta sequence
+##################################################
+
+def getSeqeunceFromRegion(allsequences, region):
+    fh = open(region, 'r')
+
+    lines = [i.strip() for i in fh]
+    #print(lines)
+
+    for j in lines:
+        eachrow = j.split("\t")
+        start = int(eachrow[2])
+        end = int(eachrow[3])
+        #print(eachrow, start, end)
+
+        for k in allsequences.keys():
+            tempk = "".join([">", k, " "])
+            tempchr = "".join([">", eachrow[1], " "])
+            #matchfound = tempk.find(tempchr)
+            #print(tempk, tempchr, matchfound)
+            if tempk.find(tempchr) >= 0:
+                newdisc = "".join([">", str(eachrow[0]), "_", str(eachrow[1]), "_", str(start), "_", str(end)])
+                print newdisc
+                line = allsequences[k][start:end]
+                n = 60
+                print "\n".join([line[i:i+n] for i in range(0, len(line), n)])
+                #print "\n"
+
         
 ##################################################
 ##### MAIN #######################################
@@ -99,11 +130,17 @@ if __name__ == '__main__':
     allarguments,parser = parseArguments()
 
     # exit if no args provided
-    if allarguments.seqfile is None and allarguments.position is None and allarguments.flank is None:
+    if allarguments.seqfile is None:
         parser.print_help()
         sys.exit(1)
+    else:
+        allsequences = loadFastaSequence(str(allarguments.seqfile))
 
-    allsequences = loadFastaSequence(str(allarguments.seqfile))
-    getSeqeunceFromPosition(allsequences, str(allarguments.position), int(allarguments.flank))
-    #print(allsequences)
+    if allarguments.position and allarguments.flank:
+        getSeqeunceFromPosition(allsequences, str(allarguments.position), int(allarguments.flank))
+    elif allarguments.region:
+        getSeqeunceFromRegion(allsequences, str(allarguments.region))
+    else:
+        parser.print_help()
+        sys.exit(1)
 
