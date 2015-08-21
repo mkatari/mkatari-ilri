@@ -6,8 +6,9 @@
 
 #Creating a temp directory.
 #The script should be executed from the folder that contains files.
-mkdir /var/scratch/mkatari
-TMPDIR=`mktemp -d --tmpdir=/var/scratch/mkatari/`
+
+mkdir /var/scratch/$USER
+TMPDIR=`mktemp -d --tmpdir=/var/scratch/$USER/`
 PWD=`pwd`
 
 #getting and setting variables
@@ -25,7 +26,10 @@ cp ${GFF} ${TMPDIR}/
 
 echo "Ready to count using htseqcount"
 
-run samtools
+#run samtools
+
+cd $TMPDIR
+
 module load samtools/0.1.19
 samtools sort -n ${TMPDIR}/${BAMFILE} ${TMPDIR}/${SORTED}
 
@@ -42,6 +46,8 @@ htseq-count -f bam -t gene -i Name -m union -r name -s no ${TMPDIR}/${SORTEDBAM}
 
 echo "Moving results to pwd."
 mv ${TMPDIR}/${OUTPUT} ${PWD}/${OUTPUT}
+
+cd $PWD
 
 echo "Cleaning up"
 rm -rf ${TMPDIR}

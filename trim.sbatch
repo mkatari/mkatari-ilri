@@ -7,7 +7,9 @@
 LEFT=$1
 RIGHT=$2
 
-TMPDIR=`mktemp -d --tmpdir=/var/scratch/mkatari/`
+mkdir /var/scratch/$USER
+
+TMPDIR=`mktemp -d --tmpdir=/var/scratch/$USER/`
 PWD=`pwd`
 
 cp $LEFT ${TMPDIR}/
@@ -20,6 +22,8 @@ OUTPUT2UNPAIR=${RIGHT}_unpair.fastq
 
 echo "Ready to trim"
 
+cd $TMPDIR
+
 java -jar /home/mkatari/apps/Trimmomatic-0.32/trimmomatic-0.32.jar PE -phred33 ${TMPDIR}/$LEFT \
 	${TMPDIR}/$RIGHT ${TMPDIR}/$OUTPUT1PAIR ${TMPDIR}/$OUTPUT1UNPAIR ${TMPDIR}/$OUTPUT2PAIR ${TMPDIR}/$OUTPUT2UNPAIR \
 	HEADCROP:15 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
@@ -29,6 +33,11 @@ mv ${TMPDIR}/${OUTPUT1PAIR} ${PWD}/${OUTPUT1PAIR}
 mv ${TMPDIR}/${OUTPUT1UNPAIR} ${PWD}/${OUTPUT1UNPAIR}
 mv ${TMPDIR}/${OUTPUT2PAIR} ${PWD}/${OUTPUT2PAIR}
 mv ${TMPDIR}/${OUTPUT2UNPAIR} ${PWD}/${OUTPUT2UNPAIR}
+
+cd $PWD
+
+echo "Cleaning up"
+rm -rf ${TMPDIR}
 
 
 echo "Done trimming"

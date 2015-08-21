@@ -6,7 +6,10 @@
 
 #Creating a temp directory.
 #The script should be executed from the folder that contains files.
-TMPDIR=`mktemp -d --tmpdir=/var/scratch/mkatari/`
+
+mkdir /var/scratch/$USER
+
+TMPDIR=`mktemp -d --tmpdir=/var/scratch/$USER/`
 PWD=`pwd`
 
 #getting and setting variables
@@ -25,6 +28,9 @@ cp ${RIGHT} ${TMPDIR}/
 echo "Ready to align using bowtie2"
 
 #run bowtie
+
+cd $TMPDIR
+
 module load bowtie2/2.2.3
 
 bowtie2 --local -x ${DATABASE} \
@@ -51,6 +57,8 @@ SORT_ORDER=coordinate
 
 echo "Moving results to pwd."
 mv ${TMPDIR}/${SORTED} ${PWD}/${SORTED}
+
+cd $PWD
 
 echo "Cleaning up"
 rm -rf ${TMPDIR}
