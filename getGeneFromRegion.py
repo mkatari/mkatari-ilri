@@ -86,8 +86,8 @@ if __name__ == '__main__':
     allarguments,parser = parseArguments()
 
     if allarguments.blastoutput is None and allarguments.gfffile is None and allarguments.numhits is None:
-    parser.print_help()
-    sys.exit(1)
+        parser.print_help()
+        sys.exit(1)
 
 
     print "Loading Blastoutput files\n"
