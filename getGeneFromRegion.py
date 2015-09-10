@@ -35,7 +35,7 @@ def parseArguments():
 def readTabFile(infile, numhits):
     fh = open(infile, 'r')    
     
-    lines = [i.strip().split('\t') for i in fh]    
+    lines = [i.strip().split(',') for i in fh]
     #print(lines)
     targets = {}
 
@@ -129,6 +129,6 @@ if __name__ == '__main__':
                 nothingfound = ["nogenes", "0", "0", "0"]
                 printtargetstring = [str(z) for z in printtarget]
 
-                print "\t".join(printtargetstring + nothingfound)
+                print ",".join(printtargetstring + nothingfound)
 
     print "\n"
