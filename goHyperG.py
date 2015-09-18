@@ -30,10 +30,12 @@ def parseArguments():
     parser = OptionParser()
     parser.add_option("-g", "--genelist", dest="genelistfile", default="cassava_genelist.txt",
                       help="specify path to file with list of genes")
-    parser.add_option("-a", "--associationfile", dest="associationfile", default="cassavaV61.go",
-                      help="association file")
-    parser.add_option("-d", "--description", dest="descriptionfile", default="/export/apps/mkatari-ilri/go.names.txt",
-                      help="file containing the description of the terms that are in association file")
+    parser.add_option("-s", "--species", dest="species", default="cassavaV6",
+                      help="specify the species to use")
+    parser.add_option("-t", "--term", dest="term", default="ALL",
+                      help="specify the term you want to use - GO, PFAM, PANTHER, KOG, KEGG, ALL")
+    parser.add_option("-c", "--config", dest="configfile", default="annotation/goHyperG.config",
+                      help="specify the configuration file")
     (options, args) = parser.parse_args()
     return options, parser
 
@@ -52,9 +54,7 @@ def loadAssociation(associationfile):
             continue
 
         gene = linesplit[0]
- #       print(gene)
         term = linesplit[1]
-  #      print(term)
         eachterm = term.split(",")
 
         for e in eachterm:
@@ -89,7 +89,6 @@ def loadGeneList(genelistfile):
     for i in fh.readlines():
         linesplit = i.split()
         gene = linesplit[0]
- #       print(gene)
 
         if gene in genelist:
             pass
@@ -111,6 +110,27 @@ def loadassocname(descriptionfile):
         goterm[linesplit.pop(0)] = " ".join(linesplit)
 
     return goterm
+
+##################################################
+# load association name
+##################################################
+
+def loadConfig(configfile, species, term):
+    fh = open(configfile, 'r')
+
+    associationfile=[]
+    descriptionfile=[]
+    for i in fh.readlines():
+        linesplit = i.strip("\n").split("|")
+        if linesplit[0] == species:
+            if linesplit[1] == term:
+                associationfile.append(linesplit[2])
+                descriptionfile.append(linesplit[3])
+            elif term == "ALL":
+                associationfile.append(linesplit[2])
+                descriptionfile.append(linesplit[3])
+
+    return associationfile, descriptionfile
 
 
 ##################################################
@@ -147,7 +167,10 @@ def doHyperG(genelist, allgenes, allterms, assocname):
 
     print("\t".join(["Term annotation", "pvalue", "fdr adj pvalue","Background","Expected","GeneList","Observed","Genes"]))
     for u in range(0,len(adjpvalue)):
-        print("\t".join([assocname[termname[u]],
+        gotermname = termname[u]
+        if termname[u] in assocname.keys():
+            gotermname = assocname[termname[u]]
+        print("\t".join([gotermname,
                          str(pvalues[u]),
                          str(adjpvalue[u]),
                          str(M),
@@ -168,13 +191,16 @@ if __name__ == '__main__':
     allarguments,parser = parseArguments()
 
     # exit if no args provided
-    if allarguments.genelistfile is None and allarguments.associationfile is None:
+    if allarguments.species is None or allarguments.term is None:
         parser.print_help()
         sys.exit(1)
 
+    associationfile, descriptionfile = loadConfig(allarguments.configfile, allarguments.species, allarguments.term)
 
-    allgenes, allterms = loadAssociation(str(allarguments.associationfile))
-    genelist = loadGeneList(str(allarguments.genelistfile))
-    assocname = loadassocname(str(allarguments.descriptionfile))
-    doHyperG(genelist, allgenes, allterms, assocname)
+    for i in range(len(associationfile)):
+
+        allgenes, allterms = loadAssociation(str(associationfile[i]))
+        genelist = loadGeneList(str(allarguments.genelistfile))
+        assocname = loadassocname(str(descriptionfile[i]))
+        doHyperG(genelist, allgenes, allterms, assocname)
 
