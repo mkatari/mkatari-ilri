@@ -34,7 +34,7 @@ def parseArguments():
                       help="specify the species to use")
     parser.add_option("-t", "--term", dest="term", default="ALL",
                       help="specify the term you want to use - GO, PFAM, PANTHER, KOG, KEGG, ALL")
-    parser.add_option("-c", "--config", dest="configfile", default="annotation/goHyperG.config",
+    parser.add_option("-c", "--config", dest="configfile", default=sys.path[0]+"/annotation/goHyperG.config",
                       help="specify the configuration file")
     (options, args) = parser.parse_args()
     return options, parser
@@ -124,11 +124,11 @@ def loadConfig(configfile, species, term):
         linesplit = i.strip("\n").split("|")
         if linesplit[0] == species:
             if linesplit[1] == term:
-                associationfile.append(linesplit[2])
-                descriptionfile.append(linesplit[3])
+                associationfile.append(sys.path[0] + '/' + linesplit[2])
+                descriptionfile.append(sys.path[0] + '/' + linesplit[3])
             elif term == "ALL":
-                associationfile.append(linesplit[2])
-                descriptionfile.append(linesplit[3])
+                associationfile.append(sys.path[0] + '/' + linesplit[2])
+                descriptionfile.append(sys.path[0] + '/' + linesplit[3])
 
     return associationfile, descriptionfile
 
@@ -189,8 +189,6 @@ def doHyperG(genelist, allgenes, allterms, assocname):
 
 if __name__ == '__main__':
 
-    print(sys.prefix, sys.path, sys.argv[0])
-    
     allarguments,parser = parseArguments()
 
     # exit if no args provided
