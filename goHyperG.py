@@ -188,6 +188,9 @@ def doHyperG(genelist, allgenes, allterms, assocname):
 ##################################################
 
 if __name__ == '__main__':
+
+    print(sys.prefix, sys.path, sys.argv[0])
+    
     allarguments,parser = parseArguments()
 
     # exit if no args provided
