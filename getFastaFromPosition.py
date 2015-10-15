@@ -87,9 +87,11 @@ def getSeqeunceFromPosition(allsequences, position, flank):
             matchfound = tempk.find(tempchr)
             #print(tempk, tempchr, matchfound)
             if tempk.find(tempchr) >= 0:
-                newdisc = "".join([">", str(eachrow[0]), "_", str(start+1), "_", str(end)])
+                newdisc = "".join([">", str(eachrow[0]), "_", str(start), "_", str(end)])
                 print newdisc
-                print allsequences[k][start:end]
+                line = allsequences[k][start-1:end-1]
+                n = 60
+                print "\n".join([line[i:i+n] for i in range(0, len(line), n)])
                 #print "\n"
 
 ##################################################
@@ -116,7 +118,7 @@ def getSeqeunceFromRegion(allsequences, region):
             if tempk.find(tempchr) >= 0:
                 newdisc = "".join([">", str(eachrow[0]), "_", str(eachrow[1]), "_", str(start), "_", str(end)])
                 print newdisc
-                line = allsequences[k][start:end]
+                line = allsequences[k][start-1:end-1]
                 n = 60
                 print "\n".join([line[i:i+n] for i in range(0, len(line), n)])
                 #print "\n"
