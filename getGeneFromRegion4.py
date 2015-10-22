@@ -37,23 +37,27 @@ def parseArguments():
 def readTabFile(infile, numhits):
     fh = open(infile, 'r')    
     
-    lines = [i.strip().split("\t") for i in fh]
+    lines = [i.strip().split(",") for i in fh]
     #print(lines)
     targets = {}
 
     for j in lines:
-        if j[0].startswith('#'):
-            pass
-        else:
+        if len(j) >= 4:
 
-            if j[0] in targets.keys():
-                if len(targets[j[0]]) == int(numhits):
-                    continue
-                else:
-                    targets[j[0]].append([j[1], j[2], j[3]])
-
+            if j[0].startswith('#'):
+                pass
             else:
-                targets[j[0]] = [[j[1], j[2], j[3]]]
+
+                if j[0] in targets.keys():
+                    if len(targets[j[0]]) == int(numhits):
+                        continue
+                    else:
+                        targets[j[0]].append([j[1], j[2], j[3]])
+
+                else:
+                    targets[j[0]] = [[j[1], j[2], j[3]]]
+        else:
+            pass
             
     return targets
 
