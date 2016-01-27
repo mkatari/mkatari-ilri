@@ -49,7 +49,7 @@ samtools view -bS ${TMPDIR}/$OUTPUT > ${TMPDIR}/${BAM}
 
 echo "Sorting bam"
 #sort using picard
-java –Djava.io.tmpdir=/var/scratch/mkatari/tmp \
+java –Djava.io.tmpdir=$TMPDIR \
 –jar /export/apps/picard-tools/1.112/SortSam.jar \
 INPUT=${TMPDIR}/${BAM} \
 OUTPUT=${TMPDIR}/${SORTED} \
