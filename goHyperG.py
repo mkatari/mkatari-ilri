@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-'''
+"""
 Created on June 6, 2015
 goHyperG.py
 - The purpose of this script is to calculate GO enrichment using hypergeometric test
@@ -14,194 +12,158 @@ goHyperG.py
     - a tab delimited file / table summarizing the terms and their p-values
 
 @author: mkatari
-'''
+"""
 __author__ = 'manpreetkatari'
 
-from optparse import OptionParser
+import os.path as path
+from argparse import ArgumentParser
+from collections import defaultdict
+
 from scipy.stats import hypergeom
-from statsmodels.sandbox.stats.multicomp import fdrcorrection0
-import sys
+from statsmodels.stats.multitest import fdrcorrection
+
+BASE_DIR = path.dirname(path.realpath(__file__))
+
 
 ##################################################
 # Do all the parsing of command line options here
 ##################################################
 
-def parseArguments():
-    parser = OptionParser()
-    parser.add_option("-g", "--genelist", dest="genelistfile", default="cassava_genelist.txt",
-                      help="specify path to file with list of genes")
-    parser.add_option("-s", "--species", dest="species", default="cassavaV6",
-                      help="specify the species to use")
-    parser.add_option("-t", "--term", dest="term", default="ALL",
-                      help="specify the term you want to use - GO, PFAM, PANTHER, KOG, KEGG, ALL")
-    parser.add_option("-c", "--config", dest="configfile", default=sys.path[0]+"/annotation/goHyperG.config",
-                      help="specify the configuration file")
-    (options, args) = parser.parse_args()
-    return options, parser
+def parse_arguments():
+    parser = ArgumentParser()
+    parser.add_argument("genelistfile", default="cassava_genelist.txt",
+                        help="specify path to file with list of genes")
+    parser.add_argument("-s", "--species", dest="species", default="cassavaV6", choices=("cassavaV6",),
+                        help="specify the species to use")
+    parser.add_argument("-t", "--term", dest="term", default="ALL",
+                        choices=("GO", "PFAM", "PANTHER", "KOG", "KEGG", "ALL"),
+                        help="specify the term you want to use - GO, PFAM, PANTHER, KOG, KEGG, ALL")
+    parser.add_argument("-c", "--config", dest="configfile",
+                        default=path.join(BASE_DIR, "annotation/goHyperG.config"),
+                        help="specify the configuration file")
+    return parser.parse_args()
+
 
 ##################################################
 # load association files
 ##################################################
 
-def loadAssociation(associationfile):
-    fh = open(associationfile, 'r')
-    allterms = {}
-    allgenes = {}
+def load_association(association_file):
+    all_terms = defaultdict(set)
+    all_genes = defaultdict(set)
 
-    for i in fh.readlines():
-        linesplit = i.split()
-        if len(linesplit) < 2:
-            continue
+    with open(association_file, 'r') as fh:
+        for line in fh:
+            try:
+                gene, term = line.split()
 
-        gene = linesplit[0]
-        term = linesplit[1]
-        eachterm = term.split(",")
+                for e in term.split(","):
+                    all_genes[gene].add(e)
+                    all_terms[e].add(gene)
+            except ValueError:
+                pass
 
-        for e in eachterm:
-            if gene in allgenes.keys():
-                if e in allgenes[gene]:
-                    pass
-                else:
-                    allgenes[gene].append(e)
-            else:
-                allgenes[gene]=[]
-                allgenes[gene].append(e)
+    return all_genes, all_terms
 
-            if e in allterms.keys():
-                if gene in allterms[e]:
-                    pass
-                else:
-                    allterms[e].append(gene)
-            else:
-                allterms[e]=[]
-                allterms[e].append(gene)
-
-    return allgenes,allterms
 
 ##################################################
 # load gene list
 ##################################################
 
-def loadGeneList(genelistfile):
-    fh = open(genelistfile, 'r')
-    genelist = []
+def load_gene_list(genelistfile):
+    with open(genelistfile, 'r') as fh:
+        return {i.split()[0] for i in fh}
 
-    for i in fh.readlines():
-        linesplit = i.split()
-        gene = linesplit[0]
-
-        if gene in genelist:
-            pass
-        else:
-            genelist.append(gene)
-
-    return genelist
 
 ##################################################
 # load association name
 ##################################################
 
-def loadassocname(descriptionfile):
-    fh = open(descriptionfile, 'r')
-    goterm = {}
+def load_assoc_name(description_file):
+    with open(description_file, 'r') as fh:
+        return {name: desc for name, sep, desc in (line.rstrip("\n").partition("\t") for line in fh)}
 
-    for i in fh.readlines():
-        linesplit = i.split()
-        goterm[linesplit.pop(0)] = " ".join(linesplit)
-
-    return goterm
 
 ##################################################
 # load association name
 ##################################################
 
-def loadConfig(configfile, species, term):
-    fh = open(configfile, 'r')
+def load_config(config_file, species, term):
+    with open(config_file, 'r') as fh:
+        association_files = []
+        description_files = []
+        for line in fh:
+            s, t, af, df = line.rstrip("\n").split("|")
+            if s == species:
+                if t == term:
+                    association_files.append(path.join(BASE_DIR, af))
+                    description_files.append(path.join(BASE_DIR, df))
+                elif term == "ALL":
+                    association_files.append(path.join(BASE_DIR, af))
+                    description_files.append(path.join(BASE_DIR, df))
 
-    associationfile=[]
-    descriptionfile=[]
-    for i in fh.readlines():
-        linesplit = i.strip("\n").split("|")
-        if linesplit[0] == species:
-            if linesplit[1] == term:
-                associationfile.append(sys.path[0] + '/' + linesplit[2])
-                descriptionfile.append(sys.path[0] + '/' + linesplit[3])
-            elif term == "ALL":
-                associationfile.append(sys.path[0] + '/' + linesplit[2])
-                descriptionfile.append(sys.path[0] + '/' + linesplit[3])
-
-    return associationfile, descriptionfile
+        return association_files, description_files
 
 
 ##################################################
 # do hyperg test
 ##################################################
 
-def doHyperG(genelist, allgenes, allterms, assocname):
+def do_hyper_geom(genelist, allgenes, allterms, assocname):
+    M = len(allgenes)
+    N = len(all_genes.keys() & genelist)
 
-    geneswithterms = allgenes.keys()
-    termswithgenes = allterms.keys()
+    pvalues = []
+    termsingenelist = []
+    termsinbackground = []
+    termname = []
 
-    M=len(geneswithterms)
-    N=len(list(set(geneswithterms).intersection(set(genelist))))
-
-    pvalues=[]
-    termsingenelist=[]
-    termsinbackground=[]
-    termname=[]
-
-    for t in termswithgenes:
-        n = len(allterms[t])
-        x = len(list(set(allterms[t]).intersection(set(genelist))))
-        if x == 0:
+    for t, genes in allterms.items():
+        x = len(genes & genelist)
+        if not x:
             continue
+        n = len(genes)
 
-        pvalue = 1.0 - hypergeom.cdf(x,M,n,N)
-        pvalues.append(pvalue)
+        pvalues.append(1.0 - hypergeom.cdf(x, M, n, N))
 
         termsingenelist.append(x)
         termsinbackground.append(n)
         termname.append(t)
 
-    adjpvalue = list(fdrcorrection0(pvalues)[1])
+    adjpvalue = fdrcorrection(pvalues)[1]
 
-    print("\t".join(["Term annotation", "pvalue", "fdr adj pvalue","Background","Expected","GeneList","Observed","Genes"]))
-    for u in range(0,len(adjpvalue)):
-        gotermname = termname[u]
-        if termname[u] in assocname.keys():
-            gotermname = assocname[termname[u]]
+    print("\t".join(
+        ["Term annotation", "pvalue", "fdr adj pvalue", "Background", "Expected", "GeneList", "Observed", "Genes"]))
+    for p, adj_p, tb, tl, tn in zip(pvalues, adjpvalue, termsinbackground, termsingenelist, termname):
+        try:
+            gotermname = tn + " " + assocname[tn]
+        except KeyError:
+            gotermname = tn
+
         print("\t".join([gotermname,
-                         str(pvalues[u]),
-                         str(adjpvalue[u]),
+                         str(p),
+                         str(adj_p),
                          str(M),
-                         str(termsinbackground[u]),
+                         str(tb),
                          str(N),
-                         str(termsingenelist[u]),
-                         ",".join(list(set(allterms[termname[u]]).intersection(set(genelist))))]
+                         str(tl),
+                         ",".join(allterms[tn] & genelist)]
                         )
               )
 
 
-
 ##################################################
-##### MAIN #######################################
+#  MAIN
 ##################################################
 
 if __name__ == '__main__':
 
-    allarguments,parser = parseArguments()
+    args = parse_arguments()
 
-    # exit if no args provided
-    if allarguments.species is None or allarguments.term is None:
-        parser.print_help()
-        sys.exit(1)
+    association_files, description_files = load_config(args.configfile, args.species, args.term)
+    genelist = load_gene_list(args.genelistfile)
 
-    associationfile, descriptionfile = loadConfig(allarguments.configfile, allarguments.species, allarguments.term)
-
-    for i in range(len(associationfile)):
-
-        allgenes, allterms = loadAssociation(str(associationfile[i]))
-        genelist = loadGeneList(str(allarguments.genelistfile))
-        assocname = loadassocname(str(descriptionfile[i]))
-        doHyperG(genelist, allgenes, allterms, assocname)
-
+    for af, df in zip(association_files, description_files):
+        all_genes, all_terms = load_association(af)
+        assocname = load_assoc_name(df)
+        do_hyper_geom(genelist, all_genes, all_terms, assocname)
