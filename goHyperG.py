@@ -19,7 +19,7 @@ import os.path as path
 from argparse import ArgumentParser
 from collections import defaultdict
 
-from scipy.stats import hypergeom
+from scipy.stats import fisher_exact
 from statsmodels.stats.multitest import fdrcorrection
 
 BASE_DIR = path.dirname(path.realpath(__file__))
@@ -112,19 +112,23 @@ def load_config(config_file, species, term):
 def do_hyper_geom(genelist, allgenes, allterms, assocname):
     M = len(allgenes)
     N = len(all_genes.keys() & genelist)
+    not_genelist = all_genes.keys() - genelist
 
     pvalues = []
     termsingenelist = []
     termsinbackground = []
     termname = []
 
-    for t, genes in allterms.items():
-        x = len(genes & genelist)
+    for t, t_genes in allterms.items():
+        x = len(t_genes & genelist)
+        # slightly fishy. Should fdr correction account for GO terms not in genes.
         if not x:
             continue
-        n = len(genes)
+        n = len(t_genes)
 
-        pvalues.append(1.0 - hypergeom.cdf(x, M, n, N))
+        pvalues.append(fisher_exact([[x, len(genelist - t_genes)],
+                                     [len(t_genes - genelist), len(not_genelist - t_genes)]],
+                                    alternative='greater')[1])
 
         termsingenelist.append(x)
         termsinbackground.append(n)
