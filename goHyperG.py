@@ -111,8 +111,8 @@ def load_config(config_file, species, term):
 
 def do_hyper_geom(genelist, allgenes, allterms, assocname):
     M = len(allgenes)
-    N = len(all_genes.keys() & genelist)
-    not_genelist = all_genes.keys() - genelist
+    N = len(allgenes.keys() & genelist)
+    not_genelist = allgenes.keys() - genelist
 
     pvalues = []
     termsingenelist = []
